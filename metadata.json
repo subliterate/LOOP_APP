@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Deep Research Loop",
+  "description": "An application that takes a subject, performs deep research using Gemini with Google Search, identifies the next logical thread of inquiry, and loops the process for a specified number of iterations.",
+  "requestFramePermissions": []
+}
