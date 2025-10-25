@@ -20,9 +20,11 @@ export default function App() {
     setTotalSteps(loops);
     
     let currentSubject = subject;
+    let activeStep = 0;
 
     try {
       for (let i = 1; i <= loops; i++) {
+        activeStep = i;
         setCurrentStep(i);
 
         const researchResult = await performDeepResearch(currentSubject);
@@ -51,12 +53,12 @@ export default function App() {
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
       console.error(e);
-      setError(`Error during step ${currentStep}: ${errorMessage}`);
+      setError(`Error during step ${activeStep}: ${errorMessage}`);
     } finally {
       setIsLoading(false);
       setCurrentStep(0);
     }
-  }, [currentStep]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900 font-sans p-4 sm:p-6 md:p-8">
