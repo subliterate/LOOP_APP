@@ -62,6 +62,11 @@ async function main() {
   let showHelp = false;
   let showVersion = false;
   let loopCount = 1;
+  // Load defaults from environment variables
+  let depth: 'casual' | 'professional' | 'scholarly' | 'expert' =
+    (process.env.RESEARCH_DEPTH as any) || 'scholarly';
+  let academicLevel: 'ba' | 'ma' | 'phd' =
+    (process.env.RESEARCH_ACADEMIC_LEVEL as any) || 'ba';
   const promptParts: string[] = [];
 
   const parseLoopValue = (value: string | undefined): void => {
@@ -88,6 +93,34 @@ async function main() {
     }
 
     loopCount = parsed;
+  };
+
+  const parseDepthValue = (value: string | undefined): void => {
+    if (!value) {
+      console.error('Error: --depth option requires a value: casual, professional, scholarly, or expert.');
+      process.exit(1);
+    }
+
+    if (!['casual', 'professional', 'scholarly', 'expert'].includes(value)) {
+      console.error(`Error: Invalid depth level "${value}". Must be one of: casual, professional, scholarly, expert`);
+      process.exit(1);
+    }
+
+    depth = value as 'casual' | 'professional' | 'scholarly' | 'expert';
+  };
+
+  const parseAcademicLevelValue = (value: string | undefined): void => {
+    if (!value) {
+      console.error('Error: --academic-level option requires a value: ba, ma, or phd.');
+      process.exit(1);
+    }
+
+    if (!['ba', 'ma', 'phd'].includes(value)) {
+      console.error(`Error: Invalid academic level "${value}". Must be one of: ba, ma, phd`);
+      process.exit(1);
+    }
+
+    academicLevel = value as 'ba' | 'ma' | 'phd';
   };
 
   for (let i = 0; i < args.length; i += 1) {
@@ -120,6 +153,30 @@ async function main() {
       continue;
     }
 
+    if (arg === '--depth') {
+      const next = args[i + 1];
+      parseDepthValue(next);
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--depth=')) {
+      parseDepthValue(arg.split('=')[1]);
+      continue;
+    }
+
+    if (arg === '--academic-level') {
+      const next = args[i + 1];
+      parseAcademicLevelValue(next);
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--academic-level=')) {
+      parseAcademicLevelValue(arg.split('=')[1]);
+      continue;
+    }
+
     if (arg.startsWith('-') && arg.length > 1) {
       console.error(`Error: Unknown option "${arg}".`);
       process.exit(1);
@@ -142,19 +199,27 @@ async function main() {
     'Usage: loop-app [options] <prompt>',
     '',
     'Options:',
-    '  -h, --help         Show this help message',
-    '  -v, --version      Show CLI version',
-    '  -n, --loops NUM    Number of research loops to run (1-10, default: 1)',
+    '  -h, --help              Show this help message',
+    '  -v, --version           Show CLI version',
+    '  -n, --loops NUM         Number of research loops to run (1-10, default: 1)',
+    '  --depth LEVEL           Research depth: casual, professional, scholarly, expert (default: scholarly)',
+    '  --academic-level LEVEL  Academic level: ba, ma, phd (default: ba)',
     '',
     'Environment Variables:',
-    '  VITE_API_BASE_URL  Custom backend API URL (e.g., https://api.example.com)',
-    '  PORT               Backend port if using localhost (default: 4000)',
-    '  LOG_LEVEL          Logging level: DEBUG, INFO, WARN, ERROR (default: INFO)',
-    '  LOG_FORMAT         Set to "json" for JSON output (default: text)',
+    '  VITE_API_BASE_URL        Custom backend API URL (e.g., https://api.example.com)',
+    '  PORT                     Backend port if using localhost (default: 4000)',
+    '  RESEARCH_DEPTH           Default research depth: casual, professional, scholarly, expert',
+    '  RESEARCH_ACADEMIC_LEVEL  Default academic level: ba, ma, phd',
+    '  LOG_LEVEL                Logging level: DEBUG, INFO, WARN, ERROR (default: INFO)',
+    '  LOG_FORMAT               Set to "json" for JSON output (default: text)',
     '',
     'Examples:',
     '  loop-app "machine learning trends"',
     '  loop-app "quantum computing" --loops 3',
+    '  loop-app "artificial intelligence" --depth scholarly --academic-level ba',
+    '  loop-app "physics" --depth expert --academic-level phd',
+    '  RESEARCH_DEPTH=expert loop-app "research topic"',
+    '  RESEARCH_DEPTH=professional RESEARCH_ACADEMIC_LEVEL=ma loop-app "topic"',
     '  VITE_API_BASE_URL=https://api.prod.com loop-app "research topic"',
     '  LOG_LEVEL=DEBUG loop-app "research topic"',
   ].join('\n');
@@ -176,6 +241,8 @@ async function main() {
     console.error('[DEBUG] Configuration:', {
       apiBaseUrl: process.env.VITE_API_BASE_URL || `localhost:${process.env.PORT || 4000}`,
       loopCount,
+      depth,
+      academicLevel,
       logLevel: process.env.LOG_LEVEL,
       logFormat: process.env.LOG_FORMAT || 'text',
     });
@@ -188,7 +255,13 @@ async function main() {
     console.log(`[Loop ${step}/${loopCount}] Researching: "${currentSubject}"`);
 
     try {
-      const results = await performDeepResearch(currentSubject);
+      const results = await performDeepResearch(currentSubject, {
+        depth,
+        academicLevel,
+        includePerspectives: true,
+        includeCaseStudies: true,
+        includeMethodology: false,
+      });
       console.log('--- Summary ---');
       console.log(results.summary);
 

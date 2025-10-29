@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { performDeepResearch, findNextInquiry } from '../geminiService';
+import { performDeepResearch, findNextInquiry } from '../geminiService.js';
 
 const jsonResponse = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
@@ -29,7 +29,7 @@ describe('geminiService', () => {
 
     const result = await performDeepResearch('AI safety');
 
-    expect(fetch).toHaveBeenCalledWith('/api/research', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:4000/api/research', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subject: 'AI safety' }),
@@ -54,7 +54,7 @@ describe('geminiService', () => {
 
     const nextSubject = await findNextInquiry('Prior summary');
 
-    expect(fetch).toHaveBeenCalledWith('/api/next-inquiry', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:4000/api/next-inquiry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ summary: 'Prior summary' }),

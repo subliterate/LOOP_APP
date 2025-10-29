@@ -1,0 +1,11 @@
+{
+  "bin": "cli.js",
+  "type": "commonjs",
+  "pkg": {
+    "scripts": [
+      "cli.js",
+      "services/geminiService.node.js",
+      "services/geminiServiceCore.js"
+    ]
+  }
+}

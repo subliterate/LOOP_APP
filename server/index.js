@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { buildResearchPrompt } from '../services/geminiServiceCore.js';
 
 dotenv.config();
 
@@ -147,7 +148,14 @@ const mapGroundingChunksToSources = (groundingChunks = []) => {
 };
 
 app.post('/api/research', async (req, res) => {
-  const { subject } = req.body || {};
+  const {
+    subject,
+    depth = 'scholarly',
+    academicLevel = 'ba',
+    includePerspectives = true,
+    includeCaseStudies = true,
+    includeMethodology = false,
+  } = req.body || {};
 
   if (!subject || typeof subject !== 'string') {
     res.status(400).json({ error: 'Subject is required.' });
@@ -155,7 +163,23 @@ app.post('/api/research', async (req, res) => {
   }
 
   try {
-    const prompt = `You are a world-class research analyst. Conduct a comprehensive deep research investigation into the following subject. Your goal is to produce a concise yet thorough summary covering the key aspects, historical context, significant developments, and current status. Format the summary into well-structured, easy-to-read paragraphs for maximum user-friendliness. Synthesize information from multiple sources to provide a holistic overview. The output must be plain text, not Markdown. The subject is: "${subject}"`;
+    // Build research configuration
+    const config = {
+      depth: depth || 'scholarly',
+      academicLevel: academicLevel || 'ba',
+      includePerspectives: includePerspectives !== false,
+      includeCaseStudies: includeCaseStudies !== false,
+      includeMethodology: includeMethodology === true,
+      wordCount: {
+        casual: 750,
+        professional: 1750,
+        scholarly: 3500,
+        expert: 5500
+      }[depth] || 3500
+    };
+
+    // Generate enhanced prompt using depth configuration
+    const prompt = buildResearchPrompt(subject, config);
 
     const response = await withRetry(() =>
       ai.models.generateContent({
@@ -163,6 +187,9 @@ app.post('/api/research', async (req, res) => {
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
+          generationConfig: {
+            maxOutputTokens: Math.ceil(config.wordCount / 0.75), // Approximate tokens
+          },
         },
       }),
       'api/research'
@@ -171,7 +198,7 @@ app.post('/api/research', async (req, res) => {
     const summary = response.text ?? '';
 
     if (!summary.trim()) {
-      logger.warn('Empty research summary returned', { subject });
+      logger.warn('Empty research summary returned', { subject, depth, academicLevel });
       res.status(502).json({ error: 'Gemini did not return a summary.' });
       return;
     }
@@ -182,12 +209,15 @@ app.post('/api/research', async (req, res) => {
 
     logger.info('Research completed successfully', {
       subject,
+      depth,
+      academicLevel,
       sourcesCount: sources.length,
     });
     res.json({ summary, sources });
   } catch (error) {
     logger.error('Research failed after retries', {
       subject,
+      depth: req.body?.depth,
       error: error.message,
     });
     res.status(502).json({

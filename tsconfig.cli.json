@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./cli-dist",
+    "noEmit": false,
+    "declaration": false,
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "cli.ts",
+    "services/geminiServiceCore.ts",
+    "services/geminiService.node.ts",
+    "types.ts"
+  ]
+}

@@ -3,19 +3,31 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "bin": {
+    "loop-app": "cli.cjs"
+  },
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
     "build": "vite build",
+    "build:cli": "node -e \"const fs=require('fs');fs.rmSync('cli-dist',{recursive:true,force:true});\" && tsc --project tsconfig.cli.json && node create-dist-package-json.cjs",
     "preview": "vite preview",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:unit": "vitest run services/__tests__",
+    "test:cli": "npm run build:cli && vitest run __tests__/cli.test.ts",
+    "test:integration": "npm run build:cli && vitest run __tests__/cli.integration.test.ts",
+    "test:e2e": "npm run build:cli && vitest run __tests__/cli.e2e.test.ts",
+    "test:smoke": "npm run build:cli && ./scripts/smoke-test.sh",
+    "test:all": "npm run test:unit && npm run test:cli && npm run test:integration && npm run test:smoke",
+    "test:coverage": "vitest run --coverage",
+    "pkg": "npm run build:cli && node -e \"const fs=require('fs');fs.rmSync('release',{recursive:true,force:true});fs.mkdirSync('release',{recursive:true});\" && pkg cli.cjs --targets node18-linux-x64,node18-win-x64 --output release/loop-app"
   },
   "dependencies": {
     "@google/genai": "^1.21.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "pkg": "^5.8.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -26,5 +38,16 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vitest": "^4.0.3"
+  },
+  "pkg": {
+    "scripts": [
+      "cli.cjs",
+      "cli-dist/**/*.js",
+      "node_modules/dotenv/**/*.js"
+    ],
+    "assets": [
+      "node_modules/dotenv/**/*",
+      "cli-dist/services/**/*.js"
+    ]
   }
 }
