@@ -1,14 +1,6 @@
 import { createGeminiService } from './geminiServiceCore.js';
 
 const resolveEnvValue = (key: string): string | undefined => {
-  const metaEnv = (import.meta as ImportMeta & {
-    env?: Record<string, string | undefined>;
-  }).env;
-
-  if (metaEnv && typeof metaEnv[key] === 'string') {
-    return metaEnv[key];
-  }
-
   if (typeof process !== 'undefined') {
     return process.env?.[key];
   }
