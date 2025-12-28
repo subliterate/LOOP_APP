@@ -1,23 +1,18 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Source } from '../types';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable is not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 interface DeepResearchResponse {
   summary: string;
   sources: Source[];
 }
 
-export const performDeepResearch = async (subject: string): Promise<DeepResearchResponse> => {
+export const performDeepResearch = async (apiKey: string, subject: string): Promise<DeepResearchResponse> => {
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = `You are a world-class research analyst. Conduct a comprehensive deep research investigation into the following subject. Your goal is to produce a concise yet thorough summary covering the key aspects, historical context, significant developments, and current status. Format the summary into well-structured, easy-to-read paragraphs for maximum user-friendliness. Synthesize information from multiple sources to provide a holistic overview. The output must be plain text, not Markdown. The subject is: "${subject}"`;
     
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.0-flash", // Updated to a widely available model alias or keep 2.5-pro if valid. Using 2.0-flash for speed/cost in BYOK.
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
@@ -51,12 +46,13 @@ export const performDeepResearch = async (subject: string): Promise<DeepResearch
   }
 };
 
-export const findNextInquiry = async (researchSummary: string): Promise<string> => {
+export const findNextInquiry = async (apiKey: string, researchSummary: string): Promise<string> => {
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = `You are a strategic research planner. Based on the following research summary, identify the single most logical and promising next thread of inquiry to deepen the investigation. Your response must be only the subject for the next research step, with no additional commentary, labels, or explanation. The output must be plain text, not Markdown. Research Summary: \`\`\`${researchSummary}\`\`\``;
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     
